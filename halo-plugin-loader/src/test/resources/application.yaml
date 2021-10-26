@@ -1,0 +1,2 @@
+halo:
+  work-dir: ${user.home}/.halo/

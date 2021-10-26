@@ -1,0 +1,5 @@
+name=模板插件
+version=1.0.0
+description=描述
+
+com.github.cooker.api.AbstractController=com.github.cooker.template.HelloController
