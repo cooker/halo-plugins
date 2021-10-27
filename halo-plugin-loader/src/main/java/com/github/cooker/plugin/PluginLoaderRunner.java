@@ -1,11 +1,11 @@
 package com.github.cooker.plugin;
 
 import com.github.cooker.api.AbstractController;
+import com.github.cooker.plugin.utils.IOUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationListener;
@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.yaml.snakeyaml.Yaml;
 
 import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -33,10 +34,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class PluginLoaderRunner implements ApplicationListener<ApplicationStartedEvent>
 {
-    @Autowired
-    RequestMappingHandlerMapping requestMappingHandlerMapping;
+    @Resource
+    RequestMappingHandlerMapping requestMappingHandler;
 
     URLClassLoader loader;
+    AnnotationConfigApplicationContext context;
 
     @Override
     @SneakyThrows
@@ -68,7 +70,7 @@ public class PluginLoaderRunner implements ApplicationListener<ApplicationStarte
 
             if (ArrayUtils.isNotEmpty(urls)) {
                 loader = URLClassLoader.newInstance(urls);
-                AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+                context = new AnnotationConfigApplicationContext();
 
                 for (Map prop : props) {
 
@@ -87,12 +89,12 @@ public class PluginLoaderRunner implements ApplicationListener<ApplicationStarte
                 context.getBeanFactory().setParentBeanFactory(beanFactory);
 
 
-                Method method = ReflectionUtils.findMethod(requestMappingHandlerMapping.getClass(), "detectHandlerMethods", Object.class);
+                Method method = ReflectionUtils.findMethod(requestMappingHandler.getClass(), "detectHandlerMethods", Object.class);
                 method.setAccessible(true);
                 for (Map prop : props) {
                     String[] cls = ((String)prop.get(AbstractController.class.getName())).split(",");
                     for (String clName : cls) {
-                        method.invoke(requestMappingHandlerMapping, context.getBean(loader.loadClass(clName)));
+                        method.invoke(requestMappingHandler, context.getBean(loader.loadClass(clName)));
                     }
                 }
             }
@@ -104,10 +106,7 @@ public class PluginLoaderRunner implements ApplicationListener<ApplicationStarte
 
     @PreDestroy
     public void destroy() {
-        if (loader != null) {
-            try {
-                loader.close();
-            } catch (Exception e){}
-        }
+        IOUtils.close(context);
+        IOUtils.close(loader);
     }
 }
