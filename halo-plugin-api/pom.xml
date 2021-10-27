@@ -11,6 +11,12 @@
   <name>halo-plugin-api</name>
   <url>http://www.example.com</url>
 
+  <parent>
+    <artifactId>halo-plugins</artifactId>
+    <groupId>com.github.cooker</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
