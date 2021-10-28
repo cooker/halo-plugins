@@ -43,6 +43,17 @@
       <version>5.3.11</version>
       <scope>provided</scope>
     </dependency>
+
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+          <groupId>com.github.cooker</groupId>
+          <artifactId>halo-plugin-maven-helper</artifactId>
+          <version>1.0.0-SNAPSHOT</version>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
