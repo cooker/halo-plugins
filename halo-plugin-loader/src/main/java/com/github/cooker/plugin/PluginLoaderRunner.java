@@ -28,8 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Hello world!
- *
+ * 插件加载
  */
 @Slf4j
 public class PluginLoaderRunner implements ApplicationListener<ApplicationStartedEvent>
@@ -53,41 +52,37 @@ public class PluginLoaderRunner implements ApplicationListener<ApplicationStarte
                                 Yaml prop = new Yaml();
                                 props.add((Map)prop.loadAs(new FileInputStream(p.toString()), Properties.class));
                             } catch (Exception e){
-                                e.printStackTrace();
+                                log.error("Load halo plugin config >> {}", p, e);
                             }
                         }
                         return p.toString().contains(".jar");
                     }).map(p-> {
                         try {
                             URL url = p.toFile().toURL();
-                            log.info("载入插件：{}", url.toString());
+                            log.info("Load halo plugin：{}", url);
                             return url;
                         } catch (MalformedURLException e) {
                             e.printStackTrace();
                             return null;
                         }
-                    }).filter(url->url!=null).collect(Collectors.toList()).toArray(new URL[0]);
-
+                    }).filter(Objects::nonNull).collect(Collectors.toList()).toArray(new URL[0]);
+            //注入插件
             if (ArrayUtils.isNotEmpty(urls)) {
                 loader = URLClassLoader.newInstance(urls);
                 context = new AnnotationConfigApplicationContext();
 
                 for (Map prop : props) {
-
-                    log.info("插件加载 name={} version={} description={}", prop.get("name"), prop.get("version"), prop.get("description"));
+                    log.info("Load halo plugin name={} version={} description={}", prop.get("name"), prop.get("version"), prop.get("description"));
                     String[] cls = ((String)prop.get(AbstractController.class.getName())).split(",");
                     for (String clName : cls) {
                         Class cl = loader.loadClass(clName);
-                        log.info("注册：{}", cl.getName());
+                        log.info("register plugin [controller]：{}", cl.getName());
                         context.register(cl);
                     }
                 }
                 context.refresh();
-                System.out.println(Arrays.asList(context.getBeanDefinitionNames()));
                 ConfigurableListableBeanFactory beanFactory = event.getApplicationContext().getBeanFactory();
-
                 context.getBeanFactory().setParentBeanFactory(beanFactory);
-
 
                 Method method = ReflectionUtils.findMethod(requestMappingHandler.getClass(), "detectHandlerMethods", Object.class);
                 method.setAccessible(true);
@@ -98,15 +93,16 @@ public class PluginLoaderRunner implements ApplicationListener<ApplicationStarte
                     }
                 }
             }
+            //提取静态资源
+            //TODO
         } catch (Exception e) {
-            log.error("插件载入失败：", e);
+            log.error("Load halo plugin failed：", e);
         }
 
     }
 
     @PreDestroy
     public void destroy() {
-        IOUtils.close(context);
-        IOUtils.close(loader);
+        IOUtils.close(context, loader);
     }
 }
