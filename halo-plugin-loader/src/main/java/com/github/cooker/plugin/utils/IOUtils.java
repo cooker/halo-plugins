@@ -18,4 +18,10 @@ public class IOUtils {
                 }
         );
     }
+
+    public static void close(Closeable... closeable) {
+        for (Closeable close : closeable) {
+            close(close);
+        }
+    }
 }
